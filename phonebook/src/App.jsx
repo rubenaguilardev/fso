@@ -2,19 +2,27 @@ import { useState } from 'react'
 
 const App = () => {
   const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '951-6237366' }
+    { name: 'Arto Hellas', number: '040-123456', id: 1 },
+    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
+    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
+    { name: 'Dil Abramov', number: '12-43-234346', id: 4 },
+    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 5 }
   ]) 
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
+  const [search, setSearch] = useState('')
 
   const handleSubmit = e => {
     e.preventDefault()
+    if (persons.some(person => person.name === newName)) {
+      alert(`${newName} is already added to phonebook`)
+      return
+    }
     const personObject = {
       name: newName,
-      number: '909-3235663'
+      number: newNumber
     }
-
-
+  
     setPersons(persons.concat(personObject))
     setNewName('')
     setNewNumber('')
@@ -22,10 +30,6 @@ const App = () => {
   }
 
   const handleChange = e => {
-    if (persons.some(person => person.name === e.target.value)) {
-      alert(`${e.target.value} is already added to phonebook`)
-      return
-    }
     setNewName(e.target.value)
   }
 
@@ -33,9 +37,15 @@ const App = () => {
     setNewNumber(e.target.value)
   }
 
+  const handleSearch = e => {
+    setSearch(e.target.value)
+  } 
+
   return (
     <div>
       <h2>Phonebook</h2>
+      <span>filter shown with </span><input onChange={handleSearch} />
+      <h2>add a new</h2>
       <form onSubmit={handleSubmit}>
         <div>
           name: 
@@ -55,12 +65,15 @@ const App = () => {
         </div>
       </form>
       <h2>Numbers</h2>
-      {persons.map(person => (
-        <div>
-          <span>{person.name} </span> 
-          <span>{person.number}</span>
-        </div>
-      ))}
+      {persons
+        .filter(person => person.name.toLowerCase().includes(search.toLowerCase()))
+        .map(person => (
+          <div key={person.id}>
+            <span>{person.name} </span>
+            <span>{person.number}</span>
+          </div>
+        ))
+      }
     </div>
   )
 }
