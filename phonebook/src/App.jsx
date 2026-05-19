@@ -11,7 +11,7 @@ const App = () => {
     e.preventDefault()
     const personObject = {
       name: newName,
-      number: '951-6237366'
+      number: '909-3235663'
     }
 
 
