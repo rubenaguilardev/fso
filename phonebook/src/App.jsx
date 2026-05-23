@@ -39,17 +39,21 @@ const App = () => {
               ),
             );
           });
+        setNewName("");
+        setNewNum("");
       }
+      return;
     }
+
     const personObject = {
-      id: persons.length + 1,
       name: newName,
       number: newNum,
     };
-
-    setPersons(persons.concat(personObject));
-    setNewName("");
-    setNewNum("");
+    numberService.create(personObject).then((newPerson) => {
+      setPersons(persons.concat(newPerson));
+      setNewName("");
+      setNewNum("");
+    });
   };
 
   const deleteNumber = (id, name) => {
