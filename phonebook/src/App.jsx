@@ -3,12 +3,14 @@ import Contact from "./component/Contact";
 import Filter from "./component/Filter";
 import PersonForm from "./component/PersonForm";
 import personServices from "./services/persons";
+import Notification from "./component/Notification";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [search, setSerach] = useState();
+  const [message, setMessage] = useState(null);
 
   useEffect(() => {
     personServices.getAll().then((initialPeople) => {
@@ -16,11 +18,15 @@ const App = () => {
     });
   }, []);
 
+  useEffect(() => {
+    console.log("App mounted");
+  }, []);
+
   const addPerson = (e) => {
     e.preventDefault();
     const person = persons.find((person) => person.name === newName);
 
-    if (persons.includes(person)) {
+    if (person) {
       if (
         window.confirm(
           `${newName} is already added to phonebook, replace the old nunber with a new one?`,
@@ -28,13 +34,17 @@ const App = () => {
       ) {
         personServices
           .update({ ...person, number: newNumber })
-          .then((updatedPerson) =>
+          .then((updatedPerson) => {
             setPersons(
-              persons.map((person) =>
-                person.id === updatedPerson.id ? updatedPerson : person,
+              persons.map((p) =>
+                p.id === updatedPerson.id ? updatedPerson : p,
               ),
-            ),
-          );
+              setMessage(`Updated ${person.name}'s details`),
+              setTimeout(() => {
+                setMessage(null);
+              }, 3000),
+            );
+          });
       }
       setNewName("");
       setNewNumber("");
@@ -46,11 +56,15 @@ const App = () => {
       number: newNumber,
     };
 
-    personServices
-      .create(personObject)
-      .then((newPerson) => setPersons(persons.concat(newPerson)));
-    setNewName("");
-    setNewNumber("");
+    personServices.create(personObject).then((person) => {
+      setPersons(persons.concat(person));
+      setMessage(`Added ${person.name}`);
+      setTimeout(() => {
+        setMessage(null);
+      }, 3000);
+      setNewName("");
+      setNewNumber("");
+    });
   };
 
   const handleNameChange = (e) => setNewName(e.target.value);
@@ -74,9 +88,11 @@ const App = () => {
   };
 
   return (
-    <div>
-      <h2>Phonebook</h2>
+    <div className="p-2 space-y-4">
+      <h2 className="text-3xl font-bold">Phonebook</h2>
+      <Notification message={message} />
       <Filter search={search} handleSearchChange={handleSearchChange} />
+      <h2 className="text-2xl font-bold">add a new</h2>
       <PersonForm
         addPerson={addPerson}
         newName={newName}
@@ -84,7 +100,7 @@ const App = () => {
         handleNameChange={handleNameChange}
         handleNumberChange={handleNumberChange}
       />
-      <h2>Numbers</h2>
+      <h2 className="text-2xl font-bold">Numbers</h2>
       {peopleToShow.map((person) => (
         <div key={person.name}>
           <Contact
