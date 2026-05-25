@@ -44,6 +44,15 @@ const App = () => {
                 setMessage(null);
               }, 3000),
             );
+          })
+          .catch((error) => {
+            setMessage(
+              `Information of ${person.name} has already been removed from server`,
+            );
+            setTimeout(() => {
+              setMessage(null);
+            }, 3000);
+            setPersons(persons.filter((p) => p.id !== person.id));
           });
       }
       setNewName("");
