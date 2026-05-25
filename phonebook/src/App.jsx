@@ -1,104 +1,98 @@
 import { useState, useEffect } from "react";
-import PersonInfo from "./component/PersonInfo";
-import PersonForm from "./component/PersonForm";
+import Contact from "./component/Contact";
 import Filter from "./component/Filter";
-import numberService from "./services/numbers";
+import PersonForm from "./component/PersonForm";
+import personServices from "./services/persons";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
-  const [newNum, setNewNum] = useState("");
-  const [search, setSearch] = useState("");
+  const [newNumber, setNewNumber] = useState("");
+  const [search, setSerach] = useState();
 
   useEffect(() => {
-    numberService.getAll().then((initialNumbers) => setPersons(initialNumbers));
+    personServices.getAll().then((initialPeople) => {
+      setPersons(initialPeople);
+    });
   }, []);
 
-  const handleSubmit = (e) => {
+  const addPerson = (e) => {
     e.preventDefault();
-    if (
-      persons.some(
-        (person) => person.name.toLowerCase() === newName.toLowerCase(),
-      )
-    ) {
+    const person = persons.find((person) => person.name === newName);
+
+    if (persons.includes(person)) {
       if (
         window.confirm(
-          `${newName} is already added to phonebook, replace the old number with a new one?`,
+          `${newName} is already added to phonebook, replace the old nunber with a new one?`,
         )
       ) {
-        const existingPerson = persons.find(
-          (person) => person.name.toLowerCase() === newName.toLowerCase(),
-        );
-        const personObject = { ...existingPerson, number: newNum };
-        numberService
-          .update(existingPerson.id, personObject)
-          .then((updatedPerson) => {
+        personServices
+          .update({ ...person, number: newNumber })
+          .then((updatedPerson) =>
             setPersons(
               persons.map((person) =>
-                person.id === existingPerson.id ? updatedPerson : person,
+                person.id === updatedPerson.id ? updatedPerson : person,
               ),
-            );
-          });
-        setNewName("");
-        setNewNum("");
+            ),
+          );
       }
+      setNewName("");
+      setNewNumber("");
       return;
     }
 
     const personObject = {
       name: newName,
-      number: newNum,
+      number: newNumber,
     };
-    numberService.create(personObject).then((newPerson) => {
-      setPersons(persons.concat(newPerson));
-      setNewName("");
-      setNewNum("");
-    });
-  };
 
-  const deleteNumber = (id, name) => {
-    if (window.confirm(`Delete ${name}?`)) {
-      numberService
-        .deleteNum(id)
-        .then(() => setPersons(persons.filter((person) => person.id !== id)));
-    }
+    personServices
+      .create(personObject)
+      .then((newPerson) => setPersons(persons.concat(newPerson)));
+    setNewName("");
+    setNewNumber("");
   };
 
   const handleNameChange = (e) => setNewName(e.target.value);
 
-  const handleNumChange = (e) => setNewNum(e.target.value);
+  const handleNumberChange = (e) => setNewNumber(e.target.value);
 
-  const handleSearch = (e) => setSearch(e.target.value);
+  const handleSearchChange = (e) => setSerach(e.target.value);
 
-  const personToShow = search
+  const peopleToShow = search
     ? persons.filter((person) =>
         person.name.toLowerCase().includes(search.toLowerCase()),
       )
     : persons;
 
+  const handleDelete = (id) => {
+    const person = persons.find((p) => p.id === id);
+    if (!window.confirm(`Delete ${person.name}`)) return;
+    personServices
+      .deletePerson(id)
+      .then(() => setPersons(persons.filter((person) => person.id !== id)));
+  };
+
   return (
     <div>
       <h2>Phonebook</h2>
-      <Filter search={search} onChange={handleSearch} />
-      <h3>add a new</h3>
+      <Filter search={search} handleSearchChange={handleSearchChange} />
       <PersonForm
-        onSubmit={handleSubmit}
-        nameValue={newName}
-        numValue={newNum}
-        onNameChange={handleNameChange}
-        onNumChange={handleNumChange}
-        name={newName}
+        addPerson={addPerson}
+        newName={newName}
+        newNumber={newNumber}
+        handleNameChange={handleNameChange}
+        handleNumberChange={handleNumberChange}
       />
-      <h3>Numbers</h3>
-      <div>
-        {personToShow.map((person) => (
-          <PersonInfo
-            key={person.id}
+      <h2>Numbers</h2>
+      {peopleToShow.map((person) => (
+        <div key={person.name}>
+          <Contact
             person={person}
-            deleteNumber={() => deleteNumber(person.id, person.name)}
+            handleDelete={() => handleDelete(person.id)}
           />
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 };
