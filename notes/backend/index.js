@@ -21,6 +21,16 @@ let notes = [
   }
 ]
 
+const requestLogger = (request, response, next) => {
+  console.log('Method:', request.method)
+  console.log('Path:  ', request.path)
+  console.log('Body:  ', request.body)
+  console.log('---')
+  next()
+}
+
+app.use(requestLogger)
+
 const generateId = () => {
   const maxId = notes.length > 0
     ? Math.max(...notes.map(n => Number(n.id)))
@@ -46,7 +56,7 @@ app.get('/api/notes/:id', (req, res) => {
 app.post('/api/notes', (req, res) => {
   const body = req.body
   if (!body.content) {
-    return response.status(400).json({
+    return res.status(400).json({
       error: 'content missing'
     })
   }
@@ -57,7 +67,7 @@ app.post('/api/notes', (req, res) => {
     id: generateId()
   }
 
-  notes = notes.concant(note)
+  notes = notes.concat(note)
 
   res.json(note)
 })
@@ -67,6 +77,12 @@ app.delete('/api/notes/:id', (req, res) => {
   notes = notes.filter(note => note.id !== id)
   res.status(204).end()
 })
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
 
 const PORT = 3001
 app.listen(PORT, () => {
