@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Person from "./components/Person";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
-import axios from "axios";
+import personService from "./services/persons";
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -11,9 +11,7 @@ const App = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    axios
-      .get("http://localhost:3002/persons")
-      .then((res) => setPersons(res.data));
+    personService.getAll().then((initialPeople) => setPersons(initialPeople));
   }, []);
 
   const addPerson = (e) => {
@@ -24,16 +22,39 @@ const App = () => {
         (person) => person.name.toLowerCase() === newName.toLowerCase(),
       )
     ) {
-      return alert(`${newName} is already added to phonebook`);
+      const person = persons.find(
+        (p) => p.name.toLowerCase() === newName.toLowerCase(),
+      );
+      if (
+        window.confirm(
+          `${newName} is already added to phonebook, replace the old number with a new one?`,
+        )
+      ) {
+        personService
+          .update({ ...person, number: newNumber })
+          .then((updatedPerson) => {
+            setPersons(
+              persons.map((p) =>
+                p.id === updatedPerson.id ? updatedPerson : p,
+              ),
+            );
+            setNewName("");
+            setNewNumber("");
+          });
+      }
+      return;
     }
+
     const personObject = {
       name: newName,
       number: newNumber,
-      id: persons.length + 1,
     };
-    setPersons(persons.concat(personObject));
-    setNewName("");
-    setNewNumber("");
+
+    personService.create(personObject).then((person) => {
+      setPersons(persons.concat(person));
+      setNewName("");
+      setNewNumber("");
+    });
   };
 
   const handleSearchChange = (e) => setSearch(e.target.value);
@@ -45,6 +66,14 @@ const App = () => {
   const displayPeople = persons.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const deletePerson = (person) => {
+    if (window.confirm(`Delete ${person.name}?`)) {
+      personService.remove(person.id).then(() => {
+        setPersons(persons.filter((p) => p.id !== person.id));
+      });
+    }
+  };
 
   return (
     <div>
@@ -61,7 +90,11 @@ const App = () => {
       <h2>Numbers</h2>
       <div>
         {displayPeople.map((person) => (
-          <Person key={person.id} person={person} />
+          <Person
+            key={person.id}
+            person={person}
+            deletePerson={() => deletePerson(person)}
+          />
         ))}
       </div>
     </div>
